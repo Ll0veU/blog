@@ -1,0 +1,1 @@
+{"name":"blog","private":true,"type":"module","scripts":{"dev":"vite","build":"vite build","preview":"vite preview"},"dependencies":{"@vitejs/plugin-vue":"latest","marked":"latest","vite":"latest","vue":"latest"},"devDependencies":{}}
