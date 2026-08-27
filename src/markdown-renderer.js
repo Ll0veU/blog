@@ -4,6 +4,7 @@ import MarkdownIt from 'markdown-it'
 import texmath from 'markdown-it-texmath'
 import hljs from 'highlight.js/lib/core'
 import katex from 'katex'
+import 'katex/dist/katex.min.css'
 
 import bash from 'highlight.js/lib/languages/bash'
 import javascript from 'highlight.js/lib/languages/javascript'
