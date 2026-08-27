@@ -4,6 +4,9 @@ import content from './content.json'
 import { renderMarkdown, parseFrontmatter } from './markdown.js'
 import SiteHeader from './components/SiteHeader.vue'
 import Lightbox from './components/Lightbox.vue'
+import { useReveal } from './useReveal.js'
+
+useReveal()
 
 const files = import.meta.glob('../source/_posts/**/*.md', { query: '?raw', import: 'default', eager: true })
 
@@ -155,6 +158,7 @@ async function attachExif(records, img, i) {
 
       <section class="post-list border-t border-line">
         <article v-for="post in posts" :key="post.slug"
+          data-reveal
           :class="['border-b border-line py-8', post.isPhoto && post.cover ? 'photo-card' : 'text-card']">
 
           <!-- photo card: cover-forward -->

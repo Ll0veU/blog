@@ -35,6 +35,8 @@
   .lede { @apply text-[1.15rem] leading-relaxed max-w-[28rem] my-8; color: var(--c-muted); }
   .card-index { @apply font-mono text-[0.65rem]; color: var(--c-accent); }
   .reveal { @apply animate-rise; }
+  /* scroll-reveal: hidden until .reveal added by IntersectionObserver */
+  [data-reveal]:not(.reveal) { opacity: 0; }
   .delay-1 { @apply animate-rise-delay; }
 
   /* prose tuned for dark-first palette */
