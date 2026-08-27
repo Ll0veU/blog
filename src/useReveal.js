@@ -3,16 +3,28 @@ import { onMounted, onUnmounted } from 'vue'
 /**
  * Scroll-reveal: elements with [data-reveal] that start below the fold are
  * hidden until they enter the viewport, then get .reveal (animate-rise).
- * Anything already on screen on mount is revealed immediately so the
- * first viewport never paints blank.
+ * Anything already on screen is revealed immediately so the first viewport
+ * never paints blank.
+ *
+ * Because the post list is conditionally rendered (v-if switching between
+ * list/article, and filtered re-renders), new [data-reveal] nodes can appear
+ * after the initial mount. A MutationObserver watches for them so a reveal
+ * is always attached to freshly created cards (otherwise they'd stay hidden
+ * at opacity:0 once the list re-renders).
  */
 export function useReveal() {
   let observer = null
+  let mo = null
+
+  const consider = (el) => {
+    if (el.classList.contains('reveal')) return
+    if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('reveal')
+    else observer && observer.observe(el)
+  }
 
   onMounted(() => {
-    const els = [...document.querySelectorAll('[data-reveal]')]
     if (!('IntersectionObserver' in window)) {
-      els.forEach((el) => el.classList.add('reveal'))
+      document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('reveal'))
       return
     }
     observer = new IntersectionObserver(
@@ -26,13 +38,21 @@ export function useReveal() {
       },
       { threshold: 0.05, rootMargin: '0px 0px -20px 0px' },
     )
-    // Above-the-fold items reveal right away; the rest are observed.
-    const top = window.innerHeight
-    for (const el of els) {
-      if (el.getBoundingClientRect().top < top) el.classList.add('reveal')
-      else observer.observe(el)
+
+    const scan = () => {
+      observer.takeRecords?.()
+      document.querySelectorAll('[data-reveal]').forEach(consider)
     }
+    scan()
+
+    // Watch for newly inserted [data-reveal] nodes (list re-renders /
+    // article->list transitions).
+    mo = new MutationObserver(() => scan())
+    mo.observe(document.body, { childList: true, subtree: true })
   })
 
-  onUnmounted(() => observer && observer.disconnect())
+  onUnmounted(() => {
+    observer && observer.disconnect()
+    mo && mo.disconnect()
+  })
 }
