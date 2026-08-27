@@ -101,7 +101,34 @@ const enhanceArticle = async () => {
   imgs.forEach((img, i) => {
     img.style.cursor = 'zoom-in'
     img.onclick = () => openLightbox(records, i)
+    if (!img.getAttribute('data-exif-attached')) {
+      img.setAttribute('data-exif-attached', '1')
+      attachExif(records, img, i)
+    }
   })
+}
+
+// read EXIF (lazy) for the image at index i, fill records[i].exif
+async function attachExif(records, img, i) {
+  const src = img.getAttribute('src')
+  if (!src) return
+  try {
+    const { parse } = await import('exifr')
+    const file = await (await fetch(src)).arrayBuffer()
+    const ex = await parse(file, { pick: ['Make', 'Model', 'LensModel', 'FNumber', 'ExposureTime', 'ISO', 'FocalLength', 'DateTimeOriginal'] })
+    if (!ex || typeof ex !== 'object')
+      return
+    const parts = []
+    const body = [ex.Make, ex.Model].filter(Boolean).join(' ') || (ex.Make || ex.Model)
+    if (body) parts.push(body)
+    if (ex.LensModel) parts.push(`🅛 ${ex.LensModel}`)
+    if (ex.FNumber) parts.push(`f/${ex.FNumber}`)
+    if (ex.ExposureTime) parts.push(`1/${Math.round(1 / ex.ExposureTime)}s`)
+    if (ex.ISO) parts.push(`ISO ${ex.ISO}`)
+    if (ex.FocalLength) parts.push(`${Math.round(ex.FocalLength)}mm`)
+    if (ex.DateTimeOriginal) parts.push(new Date(ex.DateTimeOriginal).toLocaleDateString())
+    if (parts.length) records[i].exif = parts.join(' · ')
+  } catch { /* no EXIF or cross-origin — leave null, still opens lightbox */ }
 }
 
 </script>
