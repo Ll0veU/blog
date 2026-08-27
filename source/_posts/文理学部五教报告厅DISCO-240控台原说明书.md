@@ -17,47 +17,47 @@ tags:
 
 ### 1
 
-![Page 1](/images/DISCO_240_Manual/p1.png)
+![Page 1](images/DISCO_240_Manual/p1.png)
 
 ### 2
 
-![Page 2](/images/DISCO_240_Manual/p2.png)
+![Page 2](images/DISCO_240_Manual/p2.png)
 
 ### 3
 
-![Page 3](/images/DISCO_240_Manual/p3.png)
+![Page 3](images/DISCO_240_Manual/p3.png)
 
 ### 4
 
-![Page 4](/images/DISCO_240_Manual/p4.png)
+![Page 4](images/DISCO_240_Manual/p4.png)
 
 ### 5
 
-![Page 5](/images/DISCO_240_Manual/p5.png)
+![Page 5](images/DISCO_240_Manual/p5.png)
 
 ### 6
 
-![Page 6](/images/DISCO_240_Manual/p6.png)
+![Page 6](images/DISCO_240_Manual/p6.png)
 
 ### 7
 
-![Page 7](/images/DISCO_240_Manual/p7.png)
+![Page 7](images/DISCO_240_Manual/p7.png)
 
 ### 8
 
-![Page 8](/images/DISCO_240_Manual/p8.png)
+![Page 8](images/DISCO_240_Manual/p8.png)
 
 ### 9
 
-![Page 9](/images/DISCO_240_Manual/p9.png)
+![Page 9](images/DISCO_240_Manual/p9.png)
 
 ### 10
 
-![Page 10](/images/DISCO_240_Manual/p10.png)
+![Page 10](images/DISCO_240_Manual/p10.png)
 
 ### 11
 
-![Page 11](/images/DISCO_240_Manual/p11.png)
+![Page 11](images/DISCO_240_Manual/p11.png)
 
 ## 小结
 

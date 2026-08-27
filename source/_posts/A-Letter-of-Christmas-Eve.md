@@ -41,7 +41,7 @@ $\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\
 
 ## The Letter:
 
-![The Letter](/images/SDC/A_Letter_of_Christmas_Eve.jpg)
+![The Letter](images/SDC/A_Letter_of_Christmas_Eve.jpg)
 
 <img src="https://cdn.jsdelivr.net/gh/xyz-whu-coder/CDN_Resource@0.0.1/pic/A_Letter_of_Christmas_Eve.jpg">
 
