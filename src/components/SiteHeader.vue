@@ -30,6 +30,7 @@ const onToggle = () => { dark.value = toggleTheme() === 'dark' }
 
       <!-- desktop: inline links + theme toggle -->
       <nav class="hidden md:flex items-center gap-[1.2vw] font-mono text-[0.72rem] uppercase tracking-[0.08em]">
+        <slot name="search" />
         <a v-for="l in links" :key="l.href" :href="l.href"
            :class="['transition-colors duration-200 hover:text-accent', here(l.href) ? 'text-accent' : 'text-muted']">
           {{ l.label }}
