@@ -49,13 +49,43 @@ const defaultLinkOpen = md.renderer.rules.link_open
   || ((tokens, idx, opts, _, self) => self.renderToken(tokens, idx, opts))
 md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
   const href = tokens[idx].attrGet('href') || ''
+  // External http(s) link -> open in new tab.
   if (/^https?:\/\//.test(href)) {
     const aIndex = tokens[idx].attrIndex('target')
     if (aIndex < 0) tokens[idx].attrPush(['target', '_blank'])
     else tokens[idx].attrs[aIndex][1] = '_blank'
     tokens[idx].attrSet('rel', 'noopener noreferrer')
   }
+  // Hexo-style permalink from legacy posts: /YYYY/MM/DD/:title/ -> article route.
+  // e.g. /2024/02/27/Cryptography/Feb_27/ -> ?post=Feb_27
+  else {
+    const m = href.match(/\/(?:\d{4}\/(?:\d{2}\/){2})?([^/\s]+\.?(?:md)?)\/?$/)
+    if (m) {
+      const base = m[1].replace(/\.md$/, '')
+      if (base) tokens[idx].attrSet('href', `?post=${encodeURIComponent(base)}`)
+    }
+  }
   return defaultLinkOpen(tokens, idx, opts, env, self)
+}
+
+// Auto-generate heading id anchors (markdown-it doesn't by default) so in-
+// article TOC links like #section work without touching the router.
+const defaultHeadingOpen = md.renderer.rules.heading_open
+  || ((tokens, idx, opts, _, self) => self.renderToken(tokens, idx, opts))
+function slugify(s) {
+  return s.toLowerCase().replace(/[^\w\u4e00-\u9fa5\-\s]/g, '').trim().replace(/\s+/g, '-')
+}
+md.renderer.rules.heading_open = (tokens, idx, opts, env, self) => {
+  const token = tokens[idx]
+  const inline = tokens[idx + 1]
+  const text = inline ? inline.content : ''
+  const id = slugify(text)
+  if (id) {
+    const aIdx = token.attrIndex('id')
+    if (aIdx < 0) token.attrPush(['id', id])
+    else token.attrs[aIdx][1] = id
+  }
+  return defaultHeadingOpen(tokens, idx, opts, env, self)
 }
 
 function normalizeBlockMath(s) {

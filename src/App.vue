@@ -34,14 +34,59 @@ const buildPosts = () =>
     .sort((a, b) => String(b.date).localeCompare(String(a.date)))
 
 const posts = buildPosts()
-const activeSlug = ref(decodeURIComponent(location.hash.slice(1)))
-const onHash = () => (activeSlug.value = decodeURIComponent(location.hash.slice(1)))
-addEventListener('hashchange', onHash)
-onUnmounted(() => removeEventListener('hashchange', onHash))
+
+// Article routing uses a query param (?post=slug) so in-article anchor links
+// (e.g. TOC jumping to #section) never collide with the article route.
+const slugFromUrl = () => new URLSearchParams(location.search).get('post') || ''
+const activeSlug = ref(slugFromUrl())
+
+function applyUrlState() {
+  // scroll to a hash anchor if present; else top
+  if (location.hash) {
+    const el = document.getElementById(decodeURIComponent(location.hash.slice(1)))
+    if (el) { el.scrollIntoView(); return }
+  }
+  window.scrollTo({ top: 0 })
+}
+
+function onPop() {
+  activeSlug.value = slugFromUrl()
+  nextTick(applyUrlState)
+}
+addEventListener('popstate', onPop)
+onUnmounted(() => removeEventListener('popstate', onPop))
 
 const active = computed(() => posts.find((p) => p.slug === activeSlug.value))
 const articleHtml = ref('')
 const rendering = ref(false)
+
+const openPost = (slug) => {
+  const url = new URL(location.href)
+  url.searchParams.set('post', slug)
+  url.hash = ''
+  history.pushState({}, '', url.pathname + url.search)
+  activeSlug.value = slug
+  window.scrollTo({ top: 0 })
+}
+const closePost = () => {
+  history.pushState({}, '', location.pathname)
+  activeSlug.value = ''
+  window.scrollTo({ top: 0 })
+}
+
+// Delegate clicks on in-article links of the form ?post=slug (produced by
+// the renderer for Hexo-permalink rewrites) to the SPA router so they don't
+// trigger a full-page reload.
+function onDocClick(e) {
+  const a = e.target.closest && e.target.closest('a[href^="?post="]')
+  if (a) {
+    e.preventDefault()
+    const slug = a.getAttribute('href').replace(/^\?post=/, '')
+    openPost(decodeURIComponent(slug))
+  }
+}
+document.addEventListener('click', onDocClick)
+onUnmounted(() => document.removeEventListener('click', onDocClick))
 
 watch(active, async (post) => {
   articleHtml.value = ''
@@ -141,7 +186,8 @@ async function attachExif(records, img, i) {
   <main class="shell">
     <!-- article view -->
     <article v-if="active" ref="articleRef" class="article max-w-read mx-auto pt-[6vw]">
-      <a href="#" class="no-underline font-mono text-[0.72rem] uppercase tracking-[0.08em] text-muted hover:text-accent transition-colors duration-200">← All notes</a>
+      <a href="/blog/" @click.prevent="closePost()"
+         class="no-underline font-mono text-[0.72rem] uppercase tracking-[0.08em] text-muted hover:text-accent transition-colors duration-200">← All notes</a>
       <p class="eyebrow mt-8">{{ active.date || 'Field note' }}</p>
       <h1 class="font-display font-bold leading-[0.95] tracking-tight text-[clamp(3rem,7vw,6rem)] mt-2 mb-8">{{ active.title }}</h1>
       <div v-if="rendering" class="font-mono text-[0.72rem] uppercase tracking-[0.08em] text-muted animate-pulse">Rendering…</div>
@@ -162,7 +208,7 @@ async function attachExif(records, img, i) {
           :class="['border-b border-line py-8', post.isPhoto && post.cover ? 'photo-card' : 'text-card']">
 
           <!-- photo card: cover-forward -->
-          <a v-if="post.isPhoto && post.cover" :href="`#${encodeURIComponent(post.slug)}`"
+          <a v-if="post.isPhoto && post.cover" href="#" @click.prevent="openPost(post.slug)"
              class="block group">
             <img :src="post.cover" :alt="post.title" loading="lazy"
                  class="w-full aspect-[16/9] object-cover mb-4 grayscale group-hover:grayscale-0 transition-all duration-500 ease-expo" />
@@ -172,7 +218,7 @@ async function attachExif(records, img, i) {
           </a>
 
           <!-- text card: title-forward -->
-          <a v-else :href="`#${encodeURIComponent(post.slug)}`"
+          <a v-else href="#" @click.prevent="openPost(post.slug)"
              class="grid gap-4 md:grid-cols-[5rem_1fr] items-start group">
             <span class="card-index font-mono">{{ String(post.date).slice(0, 4) || 'NOTE' }}</span>
             <div>
