@@ -4,12 +4,15 @@ import content from './content.json'
 import { renderMarkdown, parseFrontmatter } from './markdown.js'
 import SiteHeader from './components/SiteHeader.vue'
 import Lightbox from './components/Lightbox.vue'
+import ArchivePanel from './components/ArchivePanel.vue'
+import BlogSearch from './components/BlogSearch.vue'
 import { useReveal } from './useReveal.js'
 
 useReveal()
 
 const files = import.meta.glob('../source/_posts/**/*.md', { query: '?raw', import: 'default', eager: true })
 
+const validDate = (y) => y && /^\d{4}/.test(y) ? y : ''
 const buildPosts = () =>
   Object.entries(files)
     .map(([path, raw]) => {
@@ -18,13 +21,16 @@ const buildPosts = () =>
       // crude cover detection: first ![](…) or jpeg/jpg/png in body
       const coverMatch = body.match(/!\[[^\]]*\]\(([^)]+\.(?:jpe?g|png|webp))\)/i)
         || body.match(/\(([^)]+\.(?:jpe?g|png|webp))\)/i)
-      const tags = Array.isArray(meta.tags) ? meta.tags : (meta.tag ? [meta.tag] : [])
+      const tags = (Array.isArray(meta.tags) ? meta.tags : (meta.tag ? [meta.tag] : []))
+        .filter((t) => typeof t === 'string' && t.trim())
       const isPhoto = coverMatch || tags.includes('SDC')
+      const date = validDate(meta.date) || ''
       return {
         slug,
         title: meta.title || slug.replaceAll('-', ' '),
-        date: meta.date || '',
-        tags,
+        date,
+        year: date ? date.slice(0, 4) : 'Undated',
+        tags: tags.filter(Boolean),
         cover: coverMatch ? coverMatch[1] : null,
         isPhoto,
         body,
@@ -34,6 +40,24 @@ const buildPosts = () =>
     .sort((a, b) => String(b.date).localeCompare(String(a.date)))
 
 const posts = buildPosts()
+
+// ---- archive filters (time + content tags) + topbar search ----
+const selYears = ref([])
+const selTags = ref([])
+const search = ref('')
+
+const filteredPosts = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  return posts.filter((p) => {
+    if (selYears.value.length && !selYears.value.includes(p.year)) return false
+    if (selTags.value.length && !p.tags.some((t) => selTags.value.includes(t))) return false
+    if (q && !((p.title || '').toLowerCase().includes(q) ||
+               (p.tags || []).some((t) => t.toLowerCase().includes(q)) ||
+               (p.excerpt || '').toLowerCase().includes(q))) return false
+    return true
+  })
+})
+const resetFilters = () => { selYears.value = []; selTags.value = []; search.value = '' }
 
 // Article routing uses a query param (?post=slug) so in-article anchor links
 // (e.g. TOC jumping to #section) never collide with the article route.
@@ -182,7 +206,11 @@ async function attachExif(records, img, i) {
 </script>
 
 <template>
-  <SiteHeader />
+  <SiteHeader>
+    <template #search>
+      <BlogSearch :posts="posts" @open="(slug) => openPost(slug)" />
+    </template>
+  </SiteHeader>
   <main class="shell">
     <!-- article view -->
     <article v-if="active" ref="articleRef" class="article max-w-read mx-auto pt-[6vw]">
@@ -196,14 +224,25 @@ async function attachExif(records, img, i) {
 
     <!-- list view -->
     <template v-else>
-      <header class="page-head pt-[6vw] pb-[4vw] max-w-read">
+      <header class="page-head pt-[6vw] pb-[3vw] max-w-read">
         <p class="eyebrow">{{ content.label }}</p>
         <h1 class="font-display font-bold leading-[0.92] tracking-tightest text-[clamp(3.5rem,8vw,7rem)] m-0">{{ content.headline }}</h1>
         <p class="lede">{{ content.intro }}</p>
       </header>
 
-      <section class="post-list border-t border-line">
-        <article v-for="post in posts" :key="post.slug"
+      <div class="grid gap-8 md:grid-cols-[280px_1fr] md:items-start">
+        <ArchivePanel
+          :posts="posts"
+          v-model:years="selYears" v-model:tags="selTags"
+          :active-count="filteredPosts.length" :total-count="posts.length"
+          @reset="resetFilters"
+        />
+
+        <section class="post-list border-t border-line">
+          <p v-if="!filteredPosts.length" class="py-12 font-mono text-[0.8rem] text-muted text-center">
+            No posts match the current filters.
+          </p>
+        <article v-for="post in filteredPosts" :key="post.slug"
           data-reveal
           :class="['border-b border-line py-8', post.isPhoto && post.cover ? 'photo-card' : 'text-card']">
 
@@ -228,7 +267,8 @@ async function attachExif(records, img, i) {
             </div>
           </a>
         </article>
-      </section>
+        </section>
+      </div>
     </template>
 
     <Lightbox v-model:index="lbIndex" :open="lbOpen" :images="lbImages" @close="closeLightbox" />
